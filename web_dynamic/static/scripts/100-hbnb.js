@@ -2,6 +2,7 @@ $(document).ready(function () {
   let selectedAmenities = {};
   let selectedStates = {};
   let selectedCities = {};
+  let reviewsVisible = false; // Flag to track if reviews are visible
 
   // Function to check the API status
   function checkApiStatus() {
@@ -51,37 +52,88 @@ $(document).ready(function () {
         // Loop through the places and create article tags
         places.forEach((place) => {
           const article = `
-                    <article>
-                        <div class="title_box">
-                            <h2>${place.name}</h2>
-                            <div class="price_by_night">$${
-                              place.price_by_night
-                            }</div>
-                        </div>
-                        <div class="information">
-                            <div class="max_guest">${place.max_guest} Guest${
+                      <article>
+                          <div class="title_box">
+                              <h2>${place.name}</h2>
+                              <div class="price_by_night">$${
+                                place.price_by_night
+                              }</div>
+                          </div>
+                          <div class="information">
+                              <div class="max_guest">${place.max_guest} Guest${
             place.max_guest != 1 ? "s" : ""
           }</div>
-                            <div class="number_rooms">${
-                              place.number_rooms
-                            } Bedroom${place.number_rooms != 1 ? "s" : ""}</div>
-                            <div class="number_bathrooms">${
-                              place.number_bathrooms
-                            } Bathroom${
+                              <div class="number_rooms">${
+                                place.number_rooms
+                              } Bedroom${
+            place.number_rooms != 1 ? "s" : ""
+          }</div>
+                              <div class="number_bathrooms">${
+                                place.number_bathrooms
+                              } Bathroom${
             place.number_bathrooms != 1 ? "s" : ""
           }</div>
-                        </div>
-                        <div class="description">${
-                          place.description | safe
-                        }</div>
-                    </article>
-                `;
+                          </div>
+                          <div class="description">${
+                            place.description | safe
+                          }</div>
+                      </article>
+                  `;
           placesSection.append(article);
         });
       })
       .catch((error) => {
         console.error("Error fetching places:", error);
       });
+  }
+
+  // Function to fetch and display reviews
+  function fetchReviews() {
+    const apiUrl = "http://0.0.0.0:5001/api/v1/reviews/";
+
+    // Send a GET request to fetch reviews
+    fetch(apiUrl)
+      .then((response) => response.json()) // Parse the JSON from the response
+      .then((reviews) => {
+        const reviewsSection = $(".reviews");
+        reviewsSection.empty(); // Clear existing content
+
+        // Loop through the reviews and create review elements
+        reviews.forEach((review) => {
+          const reviewElement = `
+                      <div class="review">
+                          <h3>${review.title}</h3>
+                          <p>${review.text}</p>
+                          <p><strong>By:</strong> ${review.user}</p>
+                          <p><strong>Date:</strong> ${review.date}</p>
+                      </div>
+                  `;
+          reviewsSection.append(reviewElement);
+        });
+
+        // Update the span text to "hide"
+        $("#reviews_toggle").text("hide");
+      })
+      .catch((error) => {
+        console.error("Error fetching reviews:", error);
+      });
+  }
+
+  // Function to hide reviews
+  function hideReviews() {
+    $(".reviews").empty(); // Remove all review elements
+    // Update the span text to "show"
+    $("#reviews_toggle").text("show");
+  }
+
+  // Function to handle the toggle behavior for reviews
+  function toggleReviews() {
+    if (reviewsVisible) {
+      hideReviews();
+    } else {
+      fetchReviews();
+    }
+    reviewsVisible = !reviewsVisible; // Toggle the visibility flag
   }
 
   // Call the function to check the API status on page load
@@ -139,5 +191,10 @@ $(document).ready(function () {
   $('button[type="button"]').click(function () {
     // Fetch places based on selected amenities, states, and cities when the button is clicked
     fetchPlaces();
+  });
+
+  // Event listener for the Reviews toggle span
+  $("#reviews_toggle").click(function () {
+    toggleReviews();
   });
 });
